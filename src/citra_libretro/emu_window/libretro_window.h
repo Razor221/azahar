@@ -68,6 +68,7 @@ private:
     int height;
 
     bool submittedFrame = false;
+    u32 skippedFrames = 0;
 
     // Hack to ensure stuff runs on the main thread
     bool doCleanFrame = false;

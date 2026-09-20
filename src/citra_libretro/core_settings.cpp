@@ -65,6 +65,8 @@ static constexpr const char* texture_filter = citra_setting(BaseKeys::texture_fi
 static constexpr const char* texture_sampling = citra_setting(BaseKeys::texture_sampling);
 static constexpr const char* custom_textures = citra_setting(BaseKeys::custom_textures);
 static constexpr const char* dump_textures = citra_setting(BaseKeys::dump_textures);
+static constexpr const char* use_skip_duplicate_frames =
+    citra_setting(BaseKeys::use_skip_duplicate_frames);
 } // namespace graphics
 
 namespace layout {
@@ -375,6 +377,21 @@ static constexpr retro_core_option_v2_definition option_definitions[] = {
             { nullptr, nullptr }
         },
         config::enabled
+    },
+    {
+        config::graphics::use_skip_duplicate_frames,
+        "Skip Presenting Duplicate Frames",
+        "Skip Presenting Duplicate Frames",
+        "Skips the presentation of frames that are not unique. "
+        "Allows external frame generation tools to work correctly with 30fps games.",
+        nullptr,
+        config::category::graphics,
+        {
+            { config::enabled, "Enabled" },
+            { config::disabled, "Disabled" },
+            { nullptr, nullptr }
+        },
+        config::disabled
     },
     {
         config::graphics::resolution_factor,
@@ -996,6 +1013,10 @@ static void ParseGraphicsOptions(void) {
 
     Settings::values.use_disk_shader_cache =
         LibRetro::FetchVariable(config::graphics::use_disk_shader_cache, config::enabled) ==
+        config::enabled;
+
+    Settings::values.use_skip_duplicate_frames =
+        LibRetro::FetchVariable(config::graphics::use_skip_duplicate_frames, config::disabled) ==
         config::enabled;
 
     auto resolution = LibRetro::FetchVariable(config::graphics::resolution_factor, "1");

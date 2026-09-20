@@ -114,8 +114,12 @@ void RendererOpenGL::SwapBuffers() {
     RenderScreenshot();
     isSecondaryWindow = false;
 #ifdef HAVE_LIBRETRO
-    DrawScreens(render_window.GetFramebufferLayout(), false);
+    if (!Settings::values.use_skip_duplicate_frames.GetValue() ||
+        Core::PerfStats::game_frames_updated) {
+        DrawScreens(render_window.GetFramebufferLayout(), false);
+    }
     render_window.SwapBuffers();
+    Core::PerfStats::game_frames_updated = false;
 #else
     const auto& main_layout = render_window.GetFramebufferLayout();
     RenderToMailbox(main_layout, render_window.mailbox, false);
