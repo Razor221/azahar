@@ -688,7 +688,11 @@ void PresentWindow::RecreateFrame(Frame* frame, u32 width, u32 height) {
 
 void PresentWindow::Present(Frame* frame) {
     if (!frame) {
+#ifdef HAVE_LIBRETRO
+        emu_window.SwapBuffers();
+#else
         LOG_ERROR(Render_Vulkan, "Cannot present null frame");
+#endif
         return;
     }
 

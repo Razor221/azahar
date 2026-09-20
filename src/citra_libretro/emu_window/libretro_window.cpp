@@ -68,17 +68,33 @@ EmuWindow_LibRetro::~EmuWindow_LibRetro() {}
 void EmuWindow_LibRetro::SwapBuffers() {
     if (suppressPresentation)
         return;
+
+    bool is_dupe = Settings::values.use_skip_duplicate_frames.GetValue() &&
+                   !Core::PerfStats::game_frames_updated;
+    constexpr u32 MAX_SKIPPED_DUPLICATE_FRAMES = 10;
+
+    if (is_dupe && skippedFrames < MAX_SKIPPED_DUPLICATE_FRAMES) {
+        skippedFrames++;
+        // By leaving submittedFrame = false, retro_run will execute another tick of emulation.
+        // This ensures the frontend cadence matches the VM's internal unique frame rate.
+        return;
+    }
+
+    skippedFrames = 0;
     submittedFrame = true;
+
+    // We only upload valid frames now, or a forced dupe if we hit the MAX_SKIPPED limit.
+    void* frame_data = is_dupe ? nullptr : RETRO_HW_FRAME_BUFFER_VALID;
 
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::OpenGL: {
 #ifdef ENABLE_OPENGL
         auto current_state = OpenGL::OpenGLState::GetCurState();
         ResetGLState();
-        if (enableEmulatedPointer && tracker) {
+        if (!is_dupe && enableEmulatedPointer && tracker) {
             tracker->Render(width, height);
         }
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+        LibRetro::UploadVideoFrame(frame_data, static_cast<unsigned>(width),
                                    static_cast<unsigned>(height), 0);
         current_state.Apply();
 #endif
@@ -87,7 +103,7 @@ void EmuWindow_LibRetro::SwapBuffers() {
     case Settings::GraphicsAPI::Vulkan: {
 #ifdef ENABLE_VULKAN
         // Cursor is drawn inside the Vulkan render pass (RendererVulkan::DrawCursor)
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+        LibRetro::UploadVideoFrame(frame_data, static_cast<unsigned>(width),
                                    static_cast<unsigned>(height), 0);
 #endif
         break;
