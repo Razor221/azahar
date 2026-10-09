@@ -1,0 +1,63 @@
+name: citra-libretro
+
+on:
+  workflow_dispatch:
+
+env:
+  CORE_ARGS: -DENABLE_LIBRETRO=ON
+
+permissions:
+  id-token: write
+  contents: read
+  attestations: write
+
+jobs:
+  libretro-windows:
+    runs-on: ubuntu-latest
+    env:
+      OS: windows
+      TARGET: x86_64
+      BUILD_DIR: build/windows-x86_64
+      EXTRA_CORE_ARGS: -DENABLE_LTO=OFF -G Ninja
+      CMAKE: x86_64-w64-mingw32.static-cmake
+      IMAGE: reallibretroretroarch/libretro-build-mxe-win-cross-cores:mingw12
+      EXTRA_PATH: bin/Release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Build in cross-container
+        run: |
+          docker pull $IMAGE
+          docker run --rm --user root \
+              -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+              -w "${GITHUB_WORKSPACE}" \
+              $IMAGE \
+              bash -lc "\
+                  ${CMAKE} $CORE_ARGS $EXTRA_CORE_ARGS . -B $BUILD_DIR && \
+                  ${CMAKE} --build $BUILD_DIR --target citra_libretro --config Release -j $(nproc) && \
+                  x86_64-w64-mingw32.static-strip -s $BUILD_DIR/$EXTRA_PATH/azahar_libretro.*"
+      - name: Pack
+        run: ./.ci/libretro-pack.sh
+      - name: Generate SBOM
+        if: ${{ github.ref_type == 'tag' }}
+        uses: anchore/sbom-action@v0
+        with:
+          path: build/
+          format: spdx-json
+          output-file: libretro-windows.spdx.json
+          upload-artifact: false
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.OS }}-${{ env.TARGET }}
+          path: |
+            ./*.zip
+            ./*.spdx.json
+      - name: Attest artifacts
+        if: ${{ github.ref_type == 'tag' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            ./*.zip
+          sbom-path: libretro-windows.spdx.json
