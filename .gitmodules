@@ -106,3 +106,6 @@
 [submodule "externals/cryptopp"]
 	path = externals/cryptopp
 	url = https://github.com/cryptopp-modern/cryptopp-modern.git
+[submodule "externals/library-headers"]
+	path = externals/library-headers
+	url = https://github.com/azahar-emu/ext-library-headers.git
