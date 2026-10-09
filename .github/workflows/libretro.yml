@@ -26,17 +26,28 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
       - name: Build in cross-container
         run: |
+          mkdir -p .ccache
           docker pull $IMAGE
           docker run --rm --user root \
               -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
               -w "${GITHUB_WORKSPACE}" \
               $IMAGE \
               bash -lc "\
-                  ${CMAKE} $CORE_ARGS $EXTRA_CORE_ARGS . -B $BUILD_DIR && \
+                  which ccache || (apt-get update -y && apt-get install -y ccache) && \
+                  export CCACHE_DIR=${GITHUB_WORKSPACE}/.ccache && \
+                  ${CMAKE} $CORE_ARGS $EXTRA_CORE_ARGS -DENABLE_CCACHE=ON . -B $BUILD_DIR && \
                   ${CMAKE} --build $BUILD_DIR --target citra_libretro --config Release -j $(nproc) && \
-                  x86_64-w64-mingw32.static-strip -s $BUILD_DIR/$EXTRA_PATH/azahar_libretro.*"
+                  x86_64-w64-mingw32.static-strip -s $BUILD_DIR/$EXTRA_PATH/azahar_libretro.* && \
+                  ccache -s"
       - name: Pack
         run: ./.ci/libretro-pack.sh
       - name: Generate SBOM
