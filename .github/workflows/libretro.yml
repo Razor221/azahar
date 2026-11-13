@@ -53,7 +53,7 @@ jobs:
               -w "${GITHUB_WORKSPACE}" \
               $IMAGE \
               bash -lc "\
-                  ${CMAKE} $CORE_ARGS $EXTRA_CORE_ARGS . -B $BUILD_DIR && \
+                  ${CMAKE} $CORE_ARGS $EXTRA_CORE_ARGS \"-DCMAKE_CXX_FLAGS=-include algorithm -include array -include chrono -include memory -include bit\" . -B $BUILD_DIR && \
                   ${CMAKE} --build $BUILD_DIR --target citra_libretro --config Release -j $(nproc) && \
                   ccache -s && \
                   chown -R $(id -u):$(id -g) $CCACHE_DIR && \
