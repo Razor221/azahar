@@ -60,6 +60,7 @@ static constexpr const char* use_hw_shader = citra_setting(BaseKeys::use_hw_shad
 static constexpr const char* use_shader_jit = citra_setting(BaseKeys::use_shader_jit);
 static constexpr const char* shaders_accurate_mul = citra_setting(BaseKeys::shaders_accurate_mul);
 static constexpr const char* use_disk_shader_cache = citra_setting(BaseKeys::use_disk_shader_cache);
+static constexpr const char* frame_duping = citra_setting(BaseKeys::frame_duping);
 static constexpr const char* resolution_factor = citra_setting(BaseKeys::resolution_factor);
 static constexpr const char* texture_filter = citra_setting(BaseKeys::texture_filter);
 static constexpr const char* texture_sampling = citra_setting(BaseKeys::texture_sampling);
@@ -375,6 +376,23 @@ static constexpr retro_core_option_v2_definition option_definitions[] = {
             { nullptr, nullptr }
         },
         config::enabled
+    },
+    {
+        config::graphics::frame_duping,
+        "Frame Duping",
+        "Frame Duping",
+        "Let the frontend repeat the previous frame when the game has nothing new to display, "
+        "instead of the core sending it again. With the frontend's 'Skip Duplicate Frames', "
+        "those repeats are not presented, so the display receives the game's own frame rate "
+        "(for frame generation and interpolation tools).",
+        nullptr,
+        config::category::graphics,
+        {
+            { config::enabled, "Enabled" },
+            { config::disabled, "Disabled" },
+            { nullptr, nullptr }
+        },
+        config::disabled
     },
     {
         config::graphics::resolution_factor,
@@ -1003,6 +1021,11 @@ static void ParseGraphicsOptions(void) {
     Settings::values.use_disk_shader_cache =
         LibRetro::FetchVariable(config::graphics::use_disk_shader_cache, config::enabled) ==
         config::enabled;
+
+    Settings::values.use_skip_duplicate_frames =
+        LibRetro::FetchVariable(config::graphics::frame_duping, config::disabled) ==
+            config::enabled &&
+        LibRetro::CanDupe();
 
     auto resolution = LibRetro::FetchVariable(config::graphics::resolution_factor, "1");
     Settings::values.resolution_factor = std::stoi(resolution);

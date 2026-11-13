@@ -49,6 +49,7 @@
 #include "core/hle/kernel/process.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
+#include "core/perf_stats.h"
 
 #ifdef HAVE_LIBRETRO_VFS
 #include <streams/file_stream_transforms.h>
@@ -495,6 +496,7 @@ void retro_reset() {
     Core::System::GetInstance().Shutdown();
     emu_instance->game_loaded = do_load_game();
     emu_instance->first_run_loop = true;
+    Core::PerfStats::game_frames_updated = true;
 }
 
 /**
@@ -684,6 +686,7 @@ static bool DrainAsyncOperations(Core::System& system) {
     }
 
     emu_instance->emu_window->suppressPresentation = false;
+    Core::PerfStats::game_frames_updated = true;
     return true;
 }
 
@@ -730,7 +733,11 @@ bool retro_unserialize(const void* data, size_t size) {
 
     std::vector<u8> buffer(static_cast<const u8*>(data), static_cast<const u8*>(data) + size);
     try {
-        return system.LoadStateBuffer(std::move(buffer));
+        const bool loaded = system.LoadStateBuffer(std::move(buffer));
+        if (loaded) {
+            Core::PerfStats::game_frames_updated = true;
+        }
+        return loaded;
     } catch (const std::exception& e) {
         LOG_ERROR(Frontend, "Error loading state: {}", e.what());
         return false;

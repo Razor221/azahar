@@ -688,7 +688,7 @@ void PresentWindow::RecreateFrame(Frame* frame, u32 width, u32 height) {
 
 void PresentWindow::Present(Frame* frame) {
     if (!frame) {
-        LOG_ERROR(Render_Vulkan, "Cannot present null frame");
+        emu_window.SwapBuffers();
         return;
     }
 

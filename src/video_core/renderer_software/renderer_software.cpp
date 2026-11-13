@@ -3,7 +3,9 @@
 // Refer to the misc/licenses/gplv2.txt file included.
 
 #include "common/color.h"
+#include "common/settings.h"
 #include "core/core.h"
+#include "core/perf_stats.h"
 #include "video_core/gpu.h"
 #include "video_core/pica/pica_core.h"
 #include "video_core/renderer_software/renderer_software.h"
@@ -19,9 +21,15 @@ RendererSoftware::~RendererSoftware() = default;
 
 void RendererSoftware::SwapBuffers() {
     system.perf_stats->StartSwap();
-    PrepareRenderTarget();
+    if (!Settings::values.use_skip_duplicate_frames.GetValue() ||
+        Core::PerfStats::game_frames_updated) {
+        PrepareRenderTarget();
+    }
     system.perf_stats->EndSwap();
     EndFrame();
+#ifdef HAVE_LIBRETRO
+    Core::PerfStats::game_frames_updated = false;
+#endif
 }
 
 void RendererSoftware::PrepareRenderTarget() {

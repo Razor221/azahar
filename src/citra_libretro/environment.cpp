@@ -161,6 +161,11 @@ bool HasUpdatedConfig() {
     return environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated;
 }
 
+bool CanDupe() {
+    bool can_dupe = false;
+    return environ_cb(RETRO_ENVIRONMENT_GET_CAN_DUPE, &can_dupe) && can_dupe;
+}
+
 bool Shutdown() {
     return environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
 }

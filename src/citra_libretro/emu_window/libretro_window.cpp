@@ -14,6 +14,7 @@
 #include "citra_libretro/input/input_factory.h"
 #include "common/settings.h"
 #include "core/3ds.h"
+#include "core/perf_stats.h"
 #ifdef ENABLE_OPENGL
 #include "video_core/renderer_opengl/gl_state.h"
 #endif
@@ -70,15 +71,19 @@ void EmuWindow_LibRetro::SwapBuffers() {
         return;
     submittedFrame = true;
 
+    const bool is_dupe = Settings::values.use_skip_duplicate_frames.GetValue() &&
+                         !Core::PerfStats::game_frames_updated;
+    void* const frame_data = is_dupe ? nullptr : RETRO_HW_FRAME_BUFFER_VALID;
+
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::OpenGL: {
 #ifdef ENABLE_OPENGL
         auto current_state = OpenGL::OpenGLState::GetCurState();
         ResetGLState();
-        if (enableEmulatedPointer && tracker) {
+        if (!is_dupe && enableEmulatedPointer && tracker) {
             tracker->Render(width, height);
         }
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+        LibRetro::UploadVideoFrame(frame_data, static_cast<unsigned>(width),
                                    static_cast<unsigned>(height), 0);
         current_state.Apply();
 #endif
@@ -87,12 +92,18 @@ void EmuWindow_LibRetro::SwapBuffers() {
     case Settings::GraphicsAPI::Vulkan: {
 #ifdef ENABLE_VULKAN
         // Cursor is drawn inside the Vulkan render pass (RendererVulkan::DrawCursor)
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+        LibRetro::UploadVideoFrame(frame_data, static_cast<unsigned>(width),
                                    static_cast<unsigned>(height), 0);
 #endif
         break;
     }
     case Settings::GraphicsAPI::Software: {
+        if (is_dupe) {
+            LibRetro::UploadVideoFrame(nullptr, static_cast<unsigned>(width),
+                                       static_cast<unsigned>(height), 0);
+            break;
+        }
+
         retro_framebuffer fb;
         u8* data;
         size_t pitch;
@@ -179,6 +190,11 @@ void EmuWindow_LibRetro::SetupFramebuffer() {
         return;
 
 #ifdef ENABLE_OPENGL
+    if (Settings::values.use_skip_duplicate_frames.GetValue() &&
+        !Core::PerfStats::game_frames_updated) {
+        return;
+    }
+
     // TODO: Expose interface in renderer_opengl to configure this in it's internal state
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(LibRetro::GetFramebuffer()));
 
@@ -317,6 +333,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
     UpdateCurrentFramebufferLayout(baseX, baseY);
 
     doCleanFrame = true;
+    Core::PerfStats::game_frames_updated = true;
 }
 
 bool EmuWindow_LibRetro::NeedsClearing() const {
@@ -334,6 +351,7 @@ void EmuWindow_LibRetro::CreateContext() {
     tracker = std::make_unique<LibRetro::Input::MouseTracker>();
 
     doCleanFrame = true;
+    Core::PerfStats::game_frames_updated = true;
 }
 
 void EmuWindow_LibRetro::DestroyContext() {

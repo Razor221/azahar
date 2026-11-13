@@ -106,6 +106,9 @@ void SubmitAudio(const int16_t* data, size_t frames);
 /// Checks to see if the frontend configuration has been updated.
 bool HasUpdatedConfig();
 
+/// Queries whether the frontend supports frame duping (passing NULL to video refresh).
+bool CanDupe();
+
 /// Returns the current framebuffer.
 uintptr_t GetFramebuffer();
 

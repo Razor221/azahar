@@ -236,8 +236,19 @@ void RendererVulkan::PrepareDraw(Frame* frame, const Layout::FramebufferLayout& 
 
 void RendererVulkan::RenderToWindow(PresentWindow& window, const Layout::FramebufferLayout& layout,
                                     bool flipped) {
-    if (!Settings::values.use_skip_duplicate_frames.GetValue() ||
-        Core::PerfStats::game_frames_updated) {
+    const bool is_dupe = Settings::values.use_skip_duplicate_frames.GetValue() &&
+                         !Core::PerfStats::game_frames_updated;
+
+#ifdef HAVE_LIBRETRO
+    if (is_dupe) {
+        scheduler.Finish();
+        screenRendered = true;
+        window.Present(nullptr);
+        return;
+    }
+#endif
+
+    if (!is_dupe) {
         Frame* frame = window.GetRenderFrame();
 
         if (layout.width != frame->width || layout.height != frame->height) {
