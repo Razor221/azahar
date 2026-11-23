@@ -48,11 +48,12 @@ import org.citra.citra_emu.R
 import org.citra.citra_emu.contracts.OpenFileResultContract
 import org.citra.citra_emu.databinding.ActivityMainBinding
 import org.citra.citra_emu.dialogs.NetPlayDialog
-import org.citra.citra_emu.features.settings.model.Settings
-import org.citra.citra_emu.features.settings.model.SettingsViewModel
+import org.citra.citra_emu.features.input.GamepadHelper
+import org.citra.citra_emu.features.settings.model.CitraSettings
 import org.citra.citra_emu.features.settings.ui.SettingsActivity
 import org.citra.citra_emu.features.settings.utils.SettingsFile
 import org.citra.citra_emu.fragments.GrantMissingFilesystemPermissionFragment
+import org.citra.citra_emu.fragments.GrantMissingLanPermissionFragment
 import org.citra.citra_emu.fragments.SelectUserDirectoryDialogFragment
 import org.citra.citra_emu.fragments.UpdateUserDirectoryDialogFragment
 import org.citra.citra_emu.utils.BuildUtil
@@ -75,7 +76,6 @@ class MainActivity :
 
     private val homeViewModel: HomeViewModel by viewModels()
     private val gamesViewModel: GamesViewModel by viewModels()
-    private val settingsViewModel: SettingsViewModel by viewModels()
 
     override var themeId: Int = 0
 
@@ -98,7 +98,9 @@ class MainActivity :
             DirectoryInitialization.areCitraDirectoriesReady() &&
             !CitraDirectoryUtils.needToUpdateManually()
         ) {
-            settingsViewModel.settings.loadSettings()
+            // load the global settings from the config file at program launch
+            SettingsFile.loadGlobalSettings(CitraSettings.activeSettings)
+            GamepadHelper.migrateGamepadSharedPrefsToActiveSettings()
         }
 
         ThemeUtil.themeChangeListener(this)
@@ -166,6 +168,7 @@ class MainActivity :
                 R.id.homeSettingsFragment -> SettingsActivity.launch(
                     this,
                     SettingsFile.FILE_NAME_CONFIG,
+                    "",
                     ""
                 )
             }
@@ -233,7 +236,7 @@ class MainActivity :
 
     private fun checkUserPermissions() {
         val firstTimeSetup = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-            .getBoolean(Settings.PREF_FIRST_APP_LAUNCH, true)
+            .getBoolean(CitraSettings.PREF_FIRST_APP_LAUNCH, true)
 
         if (firstTimeSetup) {
             return
@@ -289,16 +292,35 @@ class MainActivity :
                 }
             }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+            if (supportFragmentManager.findFragmentByTag(GrantMissingLanPermissionFragment.TAG) ==
+                null
+            ) {
+                fun requestMissingLanPermission() = GrantMissingLanPermissionFragment.newInstance()
+                    .show(supportFragmentManager, GrantMissingLanPermissionFragment.TAG)
+
+                if (ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestMissingLanPermission()
+                }
+            }
+        }
     }
 
     fun finishSetup(navController: NavController) {
         navController.navigate(R.id.action_firstTimeSetupFragment_to_gamesFragment)
         (binding.navigationView as NavigationBarView).setupWithNavController(navController)
+        SettingsFile.loadGlobalSettings(CitraSettings.activeSettings)
+        GamepadHelper.migrateGamepadSharedPrefsToActiveSettings()
     }
 
     private fun setUpNavigation(savedInstanceState: Bundle?, navController: NavController) {
         val firstTimeSetup = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-            .getBoolean(Settings.PREF_FIRST_APP_LAUNCH, true)
+            .getBoolean(CitraSettings.PREF_FIRST_APP_LAUNCH, true)
 
         if (firstTimeSetup && !homeViewModel.navigatedToSetup) {
             homeViewModel.setupCurrentPage = savedInstanceState?.getInt(KEY_SETUP_CURRENT_PAGE) ?: 0

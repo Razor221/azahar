@@ -67,11 +67,13 @@ const std::vector<UISettings::Shortcut> QtConfig::default_hotkeys{ {
      {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"),     QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Debug Pause"),              QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Debug Resume"),             QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
+     {QStringLiteral("Debug Schedule All"),       QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Debug Step"),               QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Debug Unschedule All"),     QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
-     {QStringLiteral("Debug Schedule All"),       QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Decrease 3D Factor"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+-"), QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Decrease Speed Limit"),     QStringLiteral("Main Window"), {QStringLiteral("-"),      QStringLiteral(""), Qt::ApplicationShortcut}},
+     {QStringLiteral("Disable Turbo"),            QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
+     {QStringLiteral("Enable Turbo"),             QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Exit Azahar"),              QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Q"), QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Exit Fullscreen"),          QStringLiteral("Main Window"), {QStringLiteral("Esc"),    QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Fullscreen"),               QStringLiteral("Main Window"), {QStringLiteral("F11"),    QStringLiteral(""), Qt::ApplicationShortcut}},
@@ -85,8 +87,8 @@ const std::vector<UISettings::Shortcut> QtConfig::default_hotkeys{ {
      {QStringLiteral("Multiplayer Direct Connect to Room"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Shift"), QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Multiplayer Leave Room"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+L"), QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Multiplayer Show Current Room"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+R"), QStringLiteral(""), Qt::ApplicationShortcut}},
-     {QStringLiteral("Quick Save"),               QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Quick Load"),               QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
+     {QStringLiteral("Quick Save"),               QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Remove Amiibo"),            QStringLiteral("Main Window"), {QStringLiteral("F3"),     QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"),     QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Rotate Screens Upright"),   QStringLiteral("Main Window"), {QStringLiteral("F8"),     QStringLiteral(""), Qt::ApplicationShortcut}},
@@ -101,6 +103,7 @@ const std::vector<UISettings::Shortcut> QtConfig::default_hotkeys{ {
      {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"), QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Toggle Texture Dumping"),   QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
      {QStringLiteral("Toggle Turbo Mode"),        QStringLiteral("Main Window"), {QStringLiteral(""),      QStringLiteral(""), Qt::ApplicationShortcut}},
+     {QStringLiteral("Turbo Mode (Hold)"),        QStringLiteral("Main Window"), {QStringLiteral(""),       QStringLiteral(""), Qt::ApplicationShortcut}},
     } };
 // clang-format on
 
@@ -303,6 +306,7 @@ void QtConfig::ReadAudioValues() {
     if (global) {
         ReadBasicSetting(Settings::values.output_type);
         ReadBasicSetting(Settings::values.output_device);
+        ReadBasicSetting(Settings::values.bypass_audio_effects);
         ReadBasicSetting(Settings::values.input_type);
         ReadBasicSetting(Settings::values.input_device);
     }
@@ -725,9 +729,11 @@ void QtConfig::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.shaders_accurate_mul);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.use_vsync);
+    ReadGlobalSetting(Settings::values.use_limit_frames_ahead_of_gpu);
     ReadGlobalSetting(Settings::values.use_skip_duplicate_frames);
     ReadGlobalSetting(Settings::values.use_display_refresh_rate_detection);
     ReadGlobalSetting(Settings::values.resolution_factor);
+    ReadGlobalSetting(Settings::values.antialiasing);
     ReadGlobalSetting(Settings::values.use_integer_scaling);
     ReadGlobalSetting(Settings::values.frame_limit);
     ReadGlobalSetting(Settings::values.turbo_limit);
@@ -788,6 +794,9 @@ void QtConfig::ReadSystemValues() {
         ReadBasicSetting(Settings::values.init_time_offset);
         ReadBasicSetting(Settings::values.init_ticks_type);
         ReadBasicSetting(Settings::values.init_ticks_override);
+        ReadBasicSetting(Settings::values.battery_state_source);
+        ReadBasicSetting(Settings::values.battery_charging);
+        ReadBasicSetting(Settings::values.battery_level);
         ReadBasicSetting(Settings::values.steps_per_hour);
         ReadBasicSetting(Settings::values.plugin_loader_enabled);
         ReadBasicSetting(Settings::values.allow_plugin_loader);
@@ -873,6 +882,7 @@ void QtConfig::ReadUIValues() {
         ReadBasicSetting(UISettings::values.pause_when_in_background);
         ReadBasicSetting(UISettings::values.mute_when_in_background);
         ReadBasicSetting(UISettings::values.hide_mouse);
+        ReadBasicSetting(UISettings::values.use_on_screen_software_keyboard);
     }
 
     qt_config->endGroup();
@@ -964,6 +974,7 @@ void QtConfig::SaveAudioValues() {
     if (global) {
         WriteBasicSetting(Settings::values.output_type);
         WriteBasicSetting(Settings::values.output_device);
+        WriteBasicSetting(Settings::values.bypass_audio_effects);
         WriteBasicSetting(Settings::values.input_type);
         WriteBasicSetting(Settings::values.input_device);
     }
@@ -1278,9 +1289,11 @@ void QtConfig::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.shaders_accurate_mul);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);
     WriteGlobalSetting(Settings::values.use_vsync);
+    WriteGlobalSetting(Settings::values.use_limit_frames_ahead_of_gpu);
     WriteGlobalSetting(Settings::values.use_skip_duplicate_frames);
     WriteGlobalSetting(Settings::values.use_display_refresh_rate_detection);
     WriteGlobalSetting(Settings::values.resolution_factor);
+    WriteGlobalSetting(Settings::values.antialiasing);
     WriteGlobalSetting(Settings::values.use_integer_scaling);
     WriteGlobalSetting(Settings::values.frame_limit);
     WriteGlobalSetting(Settings::values.turbo_limit);
@@ -1341,6 +1354,9 @@ void QtConfig::SaveSystemValues() {
         WriteBasicSetting(Settings::values.init_time_offset);
         WriteBasicSetting(Settings::values.init_ticks_type);
         WriteBasicSetting(Settings::values.init_ticks_override);
+        WriteBasicSetting(Settings::values.battery_state_source);
+        WriteBasicSetting(Settings::values.battery_charging);
+        WriteBasicSetting(Settings::values.battery_level);
         WriteBasicSetting(Settings::values.steps_per_hour);
         WriteBasicSetting(Settings::values.plugin_loader_enabled);
         WriteBasicSetting(Settings::values.allow_plugin_loader);
@@ -1409,6 +1425,7 @@ void QtConfig::SaveUIValues() {
         WriteBasicSetting(UISettings::values.pause_when_in_background);
         WriteBasicSetting(UISettings::values.mute_when_in_background);
         WriteBasicSetting(UISettings::values.hide_mouse);
+        WriteBasicSetting(UISettings::values.use_on_screen_software_keyboard);
     }
 
     qt_config->endGroup();

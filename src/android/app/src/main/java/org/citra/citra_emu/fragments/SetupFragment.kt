@@ -1,6 +1,6 @@
 // Copyright 2023-2026 Citra Emulator Project / Azahar Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the misc/licenses/gplv2.txt file included.
+// Licensed under GPLv3 or any later version
+// Refer to the LICENSE.txt file included.
 
 package org.citra.citra_emu.fragments
 
@@ -36,7 +36,7 @@ import org.citra.citra_emu.NativeLibrary
 import org.citra.citra_emu.R
 import org.citra.citra_emu.adapters.SetupAdapter
 import org.citra.citra_emu.databinding.FragmentSetupBinding
-import org.citra.citra_emu.features.settings.model.Settings
+import org.citra.citra_emu.features.settings.model.CitraSettings
 import org.citra.citra_emu.model.ButtonState
 import org.citra.citra_emu.model.PageButton
 import org.citra.citra_emu.model.PageState
@@ -189,8 +189,38 @@ class SetupFragment : Fragment() {
                                     },
                                     isUnskippable = true,
                                     hasWarning = true,
-                                    R.string.filesystem_permission_warning,
+                                    R.string.missing_permissions,
                                     R.string.filesystem_permission_warning_description
+                                )
+                            )
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                            add(
+                                PageButton(
+                                    R.drawable.ic_network,
+                                    R.string.lan_permission,
+                                    R.string.lan_permission_description,
+                                    buttonAction = {
+                                        pageButtonCallback = it
+                                        permissionLauncher.launch(
+                                            Manifest.permission.ACCESS_LOCAL_NETWORK
+                                        )
+                                    },
+                                    buttonState = {
+                                        if (ContextCompat.checkSelfPermission(
+                                                requireContext(),
+                                                Manifest.permission.ACCESS_LOCAL_NETWORK
+                                            ) == PackageManager.PERMISSION_GRANTED
+                                        ) {
+                                            ButtonState.BUTTON_ACTION_COMPLETE
+                                        } else {
+                                            ButtonState.BUTTON_ACTION_INCOMPLETE
+                                        }
+                                    },
+                                    isUnskippable = true,
+                                    hasWarning = true,
+                                    R.string.missing_permissions,
+                                    R.string.lan_warning_description
                                 )
                             )
                         }
@@ -198,8 +228,8 @@ class SetupFragment : Fragment() {
                             add(
                                 PageButton(
                                     R.drawable.ic_notification,
-                                    R.string.notifications,
-                                    R.string.notifications_description,
+                                    R.string.notifications_permission,
+                                    R.string.notifications_permission_description,
                                     buttonAction = {
                                         pageButtonCallback = it
                                         permissionLauncher.launch(
@@ -629,7 +659,7 @@ class SetupFragment : Fragment() {
 
     private fun finishSetup() {
         preferences.edit()
-            .putBoolean(Settings.PREF_FIRST_APP_LAUNCH, false)
+            .putBoolean(CitraSettings.PREF_FIRST_APP_LAUNCH, false)
             .apply()
         mainActivity.finishSetup(binding.root.findNavController())
     }

@@ -59,8 +59,6 @@
     <string name="done">完成</string>
     <string name="done_description">一切就绪。\n尽情使用模拟器吧！</string>
     <string name="text_continue">继续</string>
-    <string name="notifications">通知</string>
-    <string name="notifications_description">点击下面的按钮授予通知权限。</string>
     <string name="give_permission">授予权限</string>
     <string name="notification_warning">跳过授予通知权限？</string>
     <string name="notification_warning_description">Azahar 将无法通知您重要信息。</string>
@@ -119,7 +117,6 @@
     <string name="button_turbo">加速</string>
     <string name="input_message_analog_only">此操作只能绑定到游戏手柄的摇杆或十字方向键上！</string>
     <string name="input_message_button_only">此操作只能绑定到游戏手柄的按键上！</string>
-    <string name="turbo_limit_hotkey">加速</string>
     <string name="turbo_enabled_toast">加速已启用</string>
     <string name="turbo_disabled_toast">加速已禁用</string>
     <!-- System files strings -->
@@ -334,8 +331,6 @@
     <string name="off">关闭</string>
     <string name="install">安装</string>
     <string name="delete">删除</string>
-    <string name="reset_all_settings">重置所有设置项？</string>
-    <string name="reset_all_settings_description">所有高级选项都将恢复为默认值。此操作不可撤销。</string>
     <string name="settings_reset">设置项重置</string>
     <string name="select_rtc_date">选择日期</string>
     <string name="select_rtc_time">选择时间</string>
@@ -366,7 +361,6 @@
     <string name="preferences_debug">调试</string>
     <string name="preferences_theme">主题和色彩</string>
     <string name="preferences_layout">布局</string>
-
     <string name="loader_error_encrypted">您的 ROM 是加密的</string>
     <string name="loader_error_file_not_found">ROM 文件不存在</string>
     <string name="no_game_present">目前没有可启动的游戏！</string>
